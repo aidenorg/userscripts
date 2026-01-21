@@ -1,0 +1,11 @@
+{
+	"name": "aiden-userscripts",
+	"version": "1.0.0",
+	"author": "Aiden",
+	"private": true,
+	"scripts": {},
+	"devDependencies": {
+		"@types/tampermonkey": "^5.0.5",
+		"eslint-plugin-userscripts": "^0.5.6"
+	}
+}
