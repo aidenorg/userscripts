@@ -4,7 +4,7 @@ interface Window {
 	AIDEN_DEBUG?: boolean
 }
 
-interface PatientInfo {
+interface Patient {
 	id: string | null
 	lastname: string | null
 	firstname: string | null

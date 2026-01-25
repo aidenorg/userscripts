@@ -13,12 +13,12 @@
 
 /// <reference path="./veasy-aiden.d.ts" />
 
-;(() => {
+;(;() => {
 	'use strict'
 
 	window.AIDEN_DEBUG = true
 
-	let timerId = setTimeout(extractPatientInfo, 500)
+	let timerId = setTimeout(init, 500)
 
 	// Surveillance des changements de page (SPA)
 	let lastUrl = window.location.href
@@ -26,19 +26,61 @@
 		if (window.location.href !== lastUrl) {
 			lastUrl = window.location.href
 			clearTimeout(timerId)
-			timerId = setTimeout(extractPatientInfo, 500)
+			timerId = setTimeout(init, 500)
 		}
 	}, 2000)
 
+	async function init() {
+		const patient = await extractPatient()
+
+		const patientInfosNameElement = document.querySelector('.patientInfosName')
+		if (patientInfosNameElement) {
+			const link = createAidenLink(patient)
+			patientInfosNameElement.appendChild(link)
+		}
+	}
+
 	/**
-	 * @returns {Promise<PatientInfo>}
+	 * @param {Patient} patient
 	 */
-	async function extractPatientInfo() {
+	function createAidenLink(patient) {
+		const link = document.createElement('a')
+		link.style.float = 'right'
+		link.style.width = '34px'
+		link.style.height = '25px'
+		link.style.border = '1px solid #3b4cf9'
+		link.style.borderRadius = '10px'
+		link.style.background = 'url(https://app.aiden.care/favicon.ico) #F5F5F5 no-repeat 8px 4px'
+		link.style.cursor = patient.id ? 'pointer' : 'not-allowed'
+		link.dataset.role = 'hint'
+		link.dataset.hint = patient.id ? 'Ouvrir dans Aiden' : 'Patient non trouvé'
+		link.title = 'Aiden'
+
+		if (patient.id) {
+			const aidenUrl = new URL('aiden://veasy/patient')
+			aidenUrl.searchParams.set('id', patient.id)
+			aidenUrl.searchParams.set('lastname', patient.lastname || '')
+			aidenUrl.searchParams.set('firstname', patient.firstname || '')
+			aidenUrl.searchParams.set('birthDate', patient.birthDate || '')
+			aidenUrl.searchParams.set('sex', patient.sex || '')
+			aidenUrl.searchParams.set('email', patient.email || '')
+			aidenUrl.searchParams.set('url', patient.url)
+			link.href = aidenUrl.toString()
+		} else {
+			link.style.filter = 'grayscale(100%) opacity(60%)'
+		}
+
+		return link
+	}
+	/**
+	 * @returns {Promise<Patient>}
+	 */
+	async function extractPatient() {
 		log('Extraction du patient...')
 
 		await waitForElement(['#vdNav', '#vdTopBarPatientInfos'], 1000)
 
-		const extract = extractFromLinks()
+		const extract = extractFromCustomLinks()
 
 		const patientId = extract.id || extractPatientId() || null
 		let lastname = extract.lastname || null
@@ -54,8 +96,8 @@
 		const sex = extract.sex || extractSex()
 		const email = extract.email || extractEmail()
 
-		/** @type {PatientInfo} */
-		const patientInfo = {
+		/** @type {Patient} */
+		const patient = {
 			id: patientId,
 			lastname,
 			firstname,
@@ -65,22 +107,22 @@
 			url: window.location.href,
 		}
 
-		log('Patient extrait:', patientInfo)
+		log('Patient extrait:', patient)
 
-		return patientInfo
+		return patient
 	}
 
 	/**
-	 * @returns {Partial<PatientInfo>}
+	 * @returns {Partial<Patient>}
 	 */
-	function extractFromLinks() {
+	function extractFromCustomLinks() {
 		const customSchemeRegex =
 			/^(?!https?:\/\/)(?!ftps?:\/\/)(?!mailto:)(?!javascript:)(?!data:)(?!file:)[a-z][a-z0-9+.-]*:\/\//i
 
 		/** @type {NodeListOf<HTMLAnchorElement>} */
 		const links = document.querySelectorAll('#vdNav a[href]')
 
-		/** @type {Partial<PatientInfo>} */
+		/** @type {Partial<Patient>} */
 		const result = {}
 
 		for (const link of links) {
@@ -164,7 +206,7 @@
 
 				const email = params['patient_email'] || params['email'] || null
 
-				/** @type {Partial<PatientInfo>} */
+				/** @type {Partial<Patient>} */
 				const data = { id: patientId, lastname, firstname, sex, birthDate, email }
 				log(`Données patient extraites depuis le lien ${link.href}:`, data)
 
