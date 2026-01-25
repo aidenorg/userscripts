@@ -34,15 +34,25 @@
 	 * @returns {Promise<PatientInfo>}
 	 */
 	async function extractPatientInfo() {
-		log('Extraction des informations patient...')
+		log('Extraction du patient...')
 
-		await waitForElement(['#vdTopBarPatientInfos'], 2000)
+		await waitForElement(['#vdNav', '#vdTopBarPatientInfos'], 1000)
 
-		const patientId = extractPatientId() || null
-		const { lastname, firstname } = extractName() || { lastname: null, firstname: null }
-		const birthDate = extractBirthDate()
-		const sex = extractSex()
-		const email = extractEmail()
+		const extract = extractFromLinks()
+
+		const patientId = extract.id || extractPatientId() || null
+		let lastname = extract.lastname || null
+		let firstname = extract.firstname || null
+		if (!lastname || !firstname) {
+			const name = extractName()
+			if (name) {
+				lastname = lastname || name.lastname
+				firstname = firstname || name.firstname
+			}
+		}
+		const birthDate = extract.birthDate || extractBirthDate()
+		const sex = extract.sex || extractSex()
+		const email = extract.email || extractEmail()
 
 		/** @type {PatientInfo} */
 		const patientInfo = {
@@ -55,9 +65,121 @@
 			url: window.location.href,
 		}
 
-		log('Informations patient extraites:', patientInfo)
+		log('Patient extrait:', patientInfo)
 
 		return patientInfo
+	}
+
+	/**
+	 * @returns {Partial<PatientInfo>}
+	 */
+	function extractFromLinks() {
+		const customSchemeRegex =
+			/^(?!https?:\/\/)(?!ftps?:\/\/)(?!mailto:)(?!javascript:)(?!data:)(?!file:)[a-z][a-z0-9+.-]*:\/\//i
+
+		/** @type {NodeListOf<HTMLAnchorElement>} */
+		const links = document.querySelectorAll('#vdNav a[href]')
+
+		/** @type {Partial<PatientInfo>} */
+		const result = {}
+
+		for (const link of links) {
+			try {
+				if (!customSchemeRegex.test(link.href)) continue
+
+				let query = link.href.split('://')[1] || ''
+				query = query.includes('?') ? query.split('?')[1] : query
+				if (!query) continue
+
+				query = query.replace(/;/g, '&')
+
+				/** @type {Record<string, string>} */
+				let params = {}
+
+				try {
+					const searchParams = new URLSearchParams(query)
+					for (const [key, val] of searchParams.entries()) {
+						const keyLower = key.toLowerCase()
+						params[keyLower] = val
+					}
+				} catch (e) {
+					log(`Erreur avec URLSearchParams sur "${query}":`, e)
+
+					const pairs = query.split('&')
+					for (const pair of pairs) {
+						const [key, val] = pair.split('=')
+						if (key) {
+							const keyLower = key.toLowerCase()
+							params[keyLower] = val ? decodeURIComponent(val) : ''
+						}
+					}
+				}
+
+				let patientId =
+					params['patient_num_dossier'] ||
+					params['identifiant_patient'] ||
+					params['patient_identifiant'] ||
+					params['identifiant'] ||
+					params['id'] ||
+					null
+
+				if (patientId && !/^[0-9]+$/.test(patientId)) {
+					patientId = null
+				}
+
+				const lastname = params['nom_patient'] || params['patient_nom'] || null
+				const firstname = params['prenom_patient'] || params['patient_prenom'] || null
+
+				const sexText = (params['patient_sexe'] || params['sexe'] || '').toUpperCase() || null
+				const sex =
+					sexText === 'H' || sexText === 'M' || sexText === 'HOMME'
+						? 'M'
+						: sexText === 'F' || sexText === 'W' || sexText === 'FEMME'
+							? 'W'
+							: null
+
+				let birthDate = params['patient_date_naissance'] || params['date_naissance'] || null
+				if (birthDate) {
+					const slashSeparated = birthDate.includes('/')
+					const dashSeparated = birthDate.includes('-')
+					const startsWithYear = /^\d{4}/.test(birthDate)
+
+					if (dashSeparated && !startsWithYear) {
+						// JJ-MM-YYYY => YYYY-MM-DD
+						const [day, month, year] = birthDate.split('-')
+						if (day && month && year) birthDate = `${year}-${month}-${day}`
+					} else if (slashSeparated) {
+						if (startsWithYear) {
+							// YYYY/MM/DD => YYYY-MM-DD
+							birthDate = birthDate.replace(/\//g, '-')
+						} else {
+							// JJ/MM/YYYY => YYYY-MM-DD
+							const [day, month, year] = birthDate.split('/')
+							if (day && month && year) birthDate = `${year}-${month}-${day}`
+						}
+					} else {
+						log('Format de date de naissance non reconnu:', birthDate)
+					}
+				}
+
+				const email = params['patient_email'] || params['email'] || null
+
+				/** @type {Partial<PatientInfo>} */
+				const data = { id: patientId, lastname, firstname, sex, birthDate, email }
+				log(`Données patient extraites depuis le lien ${link.href}:`, data)
+
+				result.id = result.id || data.id
+				result.lastname = result.lastname || data.lastname
+				result.firstname = result.firstname || data.firstname
+				result.sex = result.sex || data.sex
+				result.birthDate = result.birthDate || data.birthDate
+				result.email = result.email || data.email
+			} catch (error) {
+				log(`Erreur lors de l'extraction depuis le lien ${link.href}:`, error)
+			}
+		}
+
+		return result
 	}
 
 	/**
