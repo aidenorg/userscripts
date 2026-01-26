@@ -2,7 +2,7 @@
 // @name         Passerelle Veasy Aiden
 // @description  Passerelle Veasy vers Aiden
 // @author       Aiden
-// @version      0.0.1
+// @version      1.0.0
 // @updateURL    https://raw.githubusercontent.com/aidenorg/userscripts/master/veasy-aiden.user.js
 // @downloadURL  https://raw.githubusercontent.com/aidenorg/userscripts/master/veasy-aiden.user.js
 // @match        https://patient.visiodent.com/*
