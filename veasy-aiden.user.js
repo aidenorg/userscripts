@@ -18,9 +18,10 @@
 
 	window.AIDEN_DEBUG = true
 
+	const AIDEN_LINK_ID = '41d3n-l1nk'
+
 	let timerId = setTimeout(init, 500)
 
-	// Surveillance des changements de page (SPA)
 	let lastUrl = window.location.href
 	setInterval(() => {
 		if (window.location.href !== lastUrl) {
@@ -31,6 +32,9 @@
 	}, 2000)
 
 	async function init() {
+		const existingAidenLink = document.getElementById(AIDEN_LINK_ID)
+		if (existingAidenLink) existingAidenLink.remove()
+
 		const patient = await extractPatient()
 
 		const patientInfosNameElement = document.querySelector('.patientInfosName')
@@ -45,6 +49,7 @@
 	 */
 	function createAidenLink(patient) {
 		const link = document.createElement('a')
+		link.id = AIDEN_LINK_ID
 		link.style.float = 'right'
 		link.style.width = '34px'
 		link.style.height = '25px'
@@ -54,7 +59,6 @@
 		link.style.cursor = patient.id ? 'pointer' : 'not-allowed'
 		link.dataset.role = 'hint'
 		link.dataset.hint = patient.id ? 'Ouvrir dans Aiden' : 'Patient non trouvé'
-		link.title = 'Aiden'
 
 		if (patient.id) {
 			const protocol = 'aiden'
