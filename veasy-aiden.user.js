@@ -57,15 +57,19 @@
 		link.title = 'Aiden'
 
 		if (patient.id) {
-			const aidenUrl = new URL('aiden://veasy/patient')
-			aidenUrl.searchParams.set('id', patient.id)
-			aidenUrl.searchParams.set('lastname', patient.lastname || '')
-			aidenUrl.searchParams.set('firstname', patient.firstname || '')
-			aidenUrl.searchParams.set('birthDate', patient.birthDate || '')
-			aidenUrl.searchParams.set('sex', patient.sex || '')
-			aidenUrl.searchParams.set('email', patient.email || '')
-			aidenUrl.searchParams.set('url', patient.url)
-			link.href = aidenUrl.toString()
+			const protocol = 'aiden'
+
+			const url =
+				`${protocol}://veasy/patient` +
+				`?id=${encodeURIComponent(patient.id)}` +
+				`&lastname=${encodeURIComponent(patient.lastname || '')}` +
+				`&firstname=${encodeURIComponent(patient.firstname || '')}` +
+				`&birth=${encodeURIComponent(patient.birth || '')}` +
+				`&sex=${encodeURIComponent(patient.sex || '')}` +
+				`&email=${encodeURIComponent(patient.email || '')}` +
+				`&url=${encodeURIComponent(patient.url || '')}`
+
+			link.href = url
 		} else {
 			link.style.filter = 'grayscale(100%) opacity(60%)'
 		}
@@ -92,7 +96,7 @@
 				firstname = firstname || name.firstname
 			}
 		}
-		const birthDate = extract.birthDate || extractBirthDate()
+		const birth = extract.birth || extractBirth()
 		const sex = extract.sex || extractSex()
 		const email = extract.email || extractEmail()
 
@@ -101,7 +105,7 @@
 			id: patientId,
 			lastname,
 			firstname,
-			birthDate,
+			birth,
 			sex,
 			email,
 			url: window.location.href,
@@ -180,41 +184,39 @@
 							? 'W'
 							: null
 
-				let birthDate = params['patient_date_naissance'] || params['date_naissance'] || null
-				if (birthDate) {
-					const slashSeparated = birthDate.includes('/')
-					const dashSeparated = birthDate.includes('-')
-					const startsWithYear = /^\d{4}/.test(birthDate)
+				let birth = params['patient_date_naissance'] || params['date_naissance'] || null
+				if (birth) {
+					const startsWithYear = /^\d{4}/.test(birth)
 
-					if (dashSeparated && !startsWithYear) {
+					if (birth.includes('-') && !startsWithYear) {
 						// JJ-MM-YYYY => YYYY-MM-DD
-						const [day, month, year] = birthDate.split('-')
-						if (day && month && year) birthDate = `${year}-${month}-${day}`
-					} else if (slashSeparated) {
+						const [day, month, year] = birth.split('-')
+						if (day && month && year) birth = `${year}-${month}-${day}`
+					} else if (birth.includes('/')) {
 						if (startsWithYear) {
 							// YYYY/MM/DD => YYYY-MM-DD
-							birthDate = birthDate.replace(/\//g, '-')
+							birth = birth.replace(/\//g, '-')
 						} else {
 							// JJ/MM/YYYY => YYYY-MM-DD
-							const [day, month, year] = birthDate.split('/')
-							if (day && month && year) birthDate = `${year}-${month}-${day}`
+							const [day, month, year] = birth.split('/')
+							if (day && month && year) birth = `${year}-${month}-${day}`
 						}
 					} else {
-						log('Format de date de naissance non reconnu:', birthDate)
+						log('Format de date de naissance non reconnu:', birth)
 					}
 				}
 
 				const email = params['patient_email'] || params['email'] || null
 
 				/** @type {Partial<Patient>} */
-				const data = { id: patientId, lastname, firstname, sex, birthDate, email }
+				const data = { id: patientId, lastname, firstname, sex, birth: birth, email }
 				log(`Données patient extraites depuis le lien ${link.href}:`, data)
 
 				result.id = result.id || data.id
 				result.lastname = result.lastname || data.lastname
 				result.firstname = result.firstname || data.firstname
 				result.sex = result.sex || data.sex
-				result.birthDate = result.birthDate || data.birthDate
+				result.birth = result.birth || data.birth
 				result.email = result.email || data.email
 			} catch (error) {
 				log(`Erreur lors de l'extraction depuis le lien ${link.href}:`, error)
@@ -318,7 +320,7 @@
 	/**
 	 * @returns {string | null}
 	 */
-	function extractBirthDate() {
+	function extractBirth() {
 		const element = document.querySelector('.patientInfoData.dada01')
 		if (!element) return null
 

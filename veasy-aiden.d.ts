@@ -9,7 +9,7 @@ interface Patient {
 	lastname: string | null
 	firstname: string | null
 	/** format YYYY-MM-DD */
-	birthDate: string | null
+	birth: string | null
 	sex: 'M' | 'W' | null
 	email: string | null
 	/** URL de la page d'où proviennent les données */
