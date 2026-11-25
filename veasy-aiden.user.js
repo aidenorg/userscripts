@@ -3,8 +3,8 @@
 // @description  Passerelle Veasy vers Aiden
 // @author       Aiden
 // @version      1.0.0
-// @updateURL    https://raw.githubusercontent.com/aidenorg/userscripts/master/veasy-aiden.user.js
-// @downloadURL  https://raw.githubusercontent.com/aidenorg/userscripts/master/veasy-aiden.user.js
+// @updateURL    https://raw.githubusercontent.com/aidenorg/userscripts/staging/veasy-aiden.user.js
+// @downloadURL  https://raw.githubusercontent.com/aidenorg/userscripts/staging/veasy-aiden.user.js
 // @match        https://patient.visiodent.com/*
 // @icon         https://app.aiden.care/favicon.ico
 // @grant        none

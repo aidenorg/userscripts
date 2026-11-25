@@ -2,9 +2,9 @@
 // @name         Passerelle WeClever Aiden
 // @description  Relie WeClever à l'application bureau Aiden du poste : suivi des devis, ouverture du patient dans Aiden
 // @author       Aiden
-// @version      1.1.0
-// @updateURL    https://raw.githubusercontent.com/aidenorg/userscripts/develop/weclever-aiden.user.js
-// @downloadURL  https://raw.githubusercontent.com/aidenorg/userscripts/develop/weclever-aiden.user.js
+// @version      1.0.0
+// @updateURL    https://raw.githubusercontent.com/aidenorg/userscripts/staging/weclever-aiden.user.js
+// @downloadURL  https://raw.githubusercontent.com/aidenorg/userscripts/staging/weclever-aiden.user.js
 // @match        https://v2.app.weclever-dental.com/*
 // @icon         https://app.aiden.care/favicon.ico
 // @grant        GM_xmlhttpRequest
@@ -19,6 +19,8 @@
 
 	// L'application bureau écoute sur ce port (desktop/src/main/softwares/weclever-relay.ts).
 	const RELAY_URL = 'http://127.0.0.1:47816/weclever'
+	// Propre à chaque branche : master en prod, staging, develop en local (MAIN_VITE_APP_PROTOCOL).
+	const APP_PROTOCOL = 'aidenstaging'
 
 	// Application bureau fermée, ou poste sans application (Mac) : le script se tait et réessaie.
 	const RETRY_MS = 60_000
@@ -199,7 +201,7 @@
 			email: contact.email || '',
 			phone: phone?.nbr || '',
 		})
-		return `aiden://weclever/patient?${params}`
+		return `${APP_PROTOCOL}://weclever/patient?${params}`
 	}
 
 	/**
