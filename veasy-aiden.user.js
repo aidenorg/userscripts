@@ -7,7 +7,9 @@
 // @downloadURL  https://raw.githubusercontent.com/aidenorg/userscripts/staging/veasy-aiden.user.js
 // @match        https://patient.visiodent.com/*
 // @icon         https://app.aiden.care/favicon.ico
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
+// @connect      127.0.0.1
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -19,6 +21,14 @@
 	window.AIDEN_DEBUG = true
 
 	const AIDEN_LINK_ID = '41d3n-l1nk'
+
+	// Signale le script à l'application Aiden du poste, absente sur les postes sans elle.
+	GM_xmlhttpRequest({
+		method: 'GET',
+		url: 'http://127.0.0.1:47816/veasy/ping',
+		headers: { 'X-Aiden-Veasy': '1' },
+		onerror: () => {},
+	})
 
 	let timerId = setTimeout(init, 500)
 
@@ -236,7 +246,8 @@
 	function extractPatientId() {
 		const patientIdRegex = /^[0-9]+$/
 
-		const patientIdFromWindow = window.patientId || window.idpatient
+		// Les globales de la page ne sont visibles du bac à sable de Tampermonkey que par `unsafeWindow`.
+		const patientIdFromWindow = unsafeWindow.patientId || unsafeWindow.idpatient
 
 		if (patientIdFromWindow) {
 			const patientId = String(patientIdFromWindow).trim()
